@@ -429,7 +429,7 @@ startGameButton.addEventListener('click', () => {
   const numPlayers = parseInt(numPlayersSelect.value);
   const gridSize = parseInt(gridSizeInput.value);
 
-  if (isNaN(gridSize) || gridSize < 5 || gridSize > 20) {
+  if (isNaN(gridSize) || gridSize < 2 || gridSize > 20) {
       alert('Grid size must be a number between 5 and 20.');
       return;
   }
@@ -777,5 +777,6 @@ showScreen(startScreen);
   </script>
 </body>
 </html>
+
 
 
