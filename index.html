@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dots and Boxes</title>
+  <style>
+    
+    body {
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #010101;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    #app {
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      text-align: center;
+      max-width: 900px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    h1, h2 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1.1em;
+      transition: background-color 0.3s ease;
+      margin-top: 20px;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .setup-group {
+      margin-bottom: 15px;
+    }
+
+    .setup-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #555;
+    }
+
+    .setup-group input[type="text"],
+    .setup-group input[type="number"],
+    .setup-group select {
+      width: calc(100% - 20px);
+      max-width: 300px;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1em;
+      box-sizing: border-box;
+    }
+
+    #scoreboard {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .player-score {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.1em;
+      font-weight: bold;
+      padding: 8px 15px;
+      border-radius: 5px;
+      background-color: #eee;
+      border: 1px solid #ddd;
+      transition: all 0.3s ease;
+    }
+
+    .player-score.current-player {
+      border-color: #4CAF50;
+      box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+      background-color: #e6ffe6;
+    }
+
+    .player-color-box {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      border: 1px solid rgba(0,0,0,0.2);
+    }
+
+    #game-grid-container {
+      display: grid;
+      gap: 0;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+      margin: 0 auto;
+      touch-action: manipulation;
+      aspect-ratio: 1 / 1;
+      max-width: 700px;
+      width: 100%;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      background-color: #333;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 2;
+      transition: transform 0.1s ease;
+      justify-self: center;
+      align-self: center;
+    }
+
+    .dot:hover {
+      transform: scale(1.2);
+    }
+
+    .dot.selected {
+      background-color: #007bff;
+      transform: scale(1.3);
+    }
+
+    .line {
+      background-color: transparent;
+      z-index: 1;
+      justify-self: stretch;
+      align-self: stretch;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .line::before {
+      content: '';
+      background-color: transparent;
+      transition: background-color 0.2s ease;
+    }
+
+    .line.horizontal::before {
+      width: 100%;
+      height: 4px;
+    }
+
+    .line.vertical::before {
+      height: 100%;
+      width: 4px;
+    }
+
+    .line.drawn::before {
+      background-color: var(--line-color);
+    }
+
+    .box {
+      background-color: transparent;
+      z-index: 0;
+      transition: background-color 0.3s ease;
+      width: 100%;
+      height: 100%;
+    }
+
+    .box.filled {
+      background-color: var(--box-color);
+      opacity: 0.7;
+    }
+
+    #final-scoreboard {
+      margin-top: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #final-scoreboard .player-score {
+      width: fit-content;
+    }
+
+    #winner-message {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #4CAF50;
+      margin-bottom: 30px;
+    }
+
+    @media (max-width: 768px) {
+      #app {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 2em;
+      }
+
+      h2 {
+        font-size: 1.5em;
+      }
+
+      button {
+        padding: 10px 20px;
+        font-size: 1em;
+      }
+
+      .setup-group input,
+      .setup-group select {
+        font-size: 0.9em;
+      }
+
+      .player-score {
+        font-size: 1em;
+        padding: 6px 12px;
+      }
+
+      .player-color-box {
+        width: 16px;
+        height: 16px;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+      }
+
+      .line.horizontal::before {
+        height: 3px;
+      }
+
+      .line.vertical::before {
+        width: 3px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #app {
+        padding: 15px;
+      }
+
+      h1 {
+        font-size: 1.8em;
+      }
+
+      h2 {
+        font-size: 1.3em;
+      }
+
+      button {
+        padding: 8px 16px;
+        font-size: 0.9em;
+      }
+
+      .setup-group input,
+      .setup-group select {
+        font-size: 0.85em;
+      }
+
+      .player-score {
+        font-size: 0.9em;
+        padding: 5px 10px;
+      }
+
+      .player-color-box {
+        width: 14px;
+        height: 14px;
+      }
+
+      .dot {
+        width: 6px;
+        height: 6px;
+      }
+
+      .line.horizontal::before {
+        height: 2px;
+      }
+
+      .line.vertical::before {
+        width: 2px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    
+    <section id="start-screen" class="screen active">
+      <h1>Dotify</h1>
+      <button id="play-game-btn">Play Game</button>
+    </section>
+
+   
+    <section id="setup-screen" class="screen">
+      <h2>Game Setup</h2>
+      <div class="setup-group">
+        <label for="num-players">Number of Players:</label>
+        <select id="num-players">
+          <option value="2">2 Players</option>
+          <option value="3">3 Players</option>
+        </select>
+      </div>
+      <div id="player-inputs">
+        
+      </div>
+      <div class="setup-group">
+        <label for="grid-size">Grid Size:</label>
+        <input type="number" id="grid-size" min="5" max="20" value="10">
+      </div>
+      <button id="start-game-btn">Start Game</button>
+    </section>
+
+    
+    <section id="game-screen" class="screen">
+      <div id="scoreboard"></div>
+      <div id="game-grid-container"></div>
+    </section>
+
+    
+    <section id="end-screen" class="screen">
+      <h2>Game Over!</h2>
+      <div id="final-scoreboard"></div>
+      <p id="winner-message"></p>
+      <button id="restart-game-btn">Restart Game</button>
+    </section>
+  </div>
+
+  
+  <script>
+    
+const gameState = {
+  players: [],
+  gridSize: 0,
+  horizontalLines: [], // gridSize x (gridSize - 1) matrix to track drawn horizontal lines
+  verticalLines: [],   // (gridSize - 1) x gridSize matrix to track drawn vertical lines
+  boxes: [],           // (gridSize - 1) x (gridSize - 1) matrix to track box ownership
+  currentPlayerIndex: 0,
+  selectedDot: null, // Stores the first selected dot: { row, col, element }
+  totalBoxes: 0,
+  completedBoxes: 0,
+  playerColors: [
+      '#FF6347', // Tomato
+      '#4682B4', // SteelBlue
+      '#32CD32', // LimeGreen
+      '#FFD700', // Gold
+      '#9370DB', // MediumPurple
+      '#00CED1'  // DarkTurquoise
+  ]
+};
+
+
+const startScreen = document.getElementById('start-screen');
+const setupScreen = document.getElementById('setup-screen');
+const gameScreen = document.getElementById('game-screen');
+const endScreen = document.getElementById('end-screen');
+
+const playButton = document.getElementById('play-game-btn');
+const numPlayersSelect = document.getElementById('num-players');
+const playerInputsDiv = document.getElementById('player-inputs');
+const gridSizeInput = document.getElementById('grid-size');
+const startGameButton = document.getElementById('start-game-btn');
+const restartGameButton = document.getElementById('restart-game-btn');
+
+const scoreboardDiv = document.getElementById('scoreboard');
+const gameGridContainer = document.getElementById('game-grid-container');
+const winnerMessage = document.getElementById('winner-message');
+const finalScoreboardDiv = document.getElementById('final-scoreboard');
+
+
+function showScreen(screen) {
+  startScreen.classList.remove('active');
+  setupScreen.classList.remove('active');
+  gameScreen.classList.remove('active');
+  endScreen.classList.remove('active');
+  screen.classList.add('active');
+}
+
+
+playButton.addEventListener('click', () => {
+  showScreen(setupScreen);
+  renderPlayerInputs(); 
+});
+
+numPlayersSelect.addEventListener('change', renderPlayerInputs);
+
+function renderPlayerInputs() {
+  const numPlayers = parseInt(numPlayersSelect.value);
+  playerInputsDiv.innerHTML = ''; 
+
+  for (let i = 0; i < numPlayers; i++) {
+      const playerDiv = document.createElement('div');
+      playerDiv.classList.add('setup-group');
+      playerDiv.innerHTML = `
+          <label for="player-name-${i + 1}">Player ${i + 1} Name:</label>
+          <input type="text" id="player-name-${i + 1}" value="Player ${i + 1}" required>
+      `;
+      playerInputsDiv.appendChild(playerDiv);
+  }
+}
+
+startGameButton.addEventListener('click', () => {
+  const numPlayers = parseInt(numPlayersSelect.value);
+  const gridSize = parseInt(gridSizeInput.value);
+
+  if (isNaN(gridSize) || gridSize < 5 || gridSize > 20) {
+      alert('Grid size must be a number between 5 and 20.');
+      return;
+  }
+
+  gameState.players = [];
+  for (let i = 0; i < numPlayers; i++) {
+      const playerNameInput = document.getElementById(`player-name-${i + 1}`);
+      if (!playerNameInput.value.trim()) {
+          alert(`Please enter a name for Player ${i + 1}.`);
+          return;
+      }
+      gameState.players.push({
+          name: playerNameInput.value.trim(),
+          color: gameState.playerColors[i % gameState.playerColors.length], // Assign unique colors
+          score: 0
+      });
+  }
+
+  gameState.gridSize = gridSize;
+  initializeGame();
+  showScreen(gameScreen);
+});
+
+//  Game Initialization 
+function initializeGame() {
+ 
+  gameState.horizontalLines = Array(gameState.gridSize).fill(null).map(() => Array(gameState.gridSize - 1).fill(null));
+  gameState.verticalLines = Array(gameState.gridSize - 1).fill(null).map(() => Array(gameState.gridSize).fill(null));
+  gameState.boxes = Array(gameState.gridSize - 1).fill(null).map(() => Array(gameState.gridSize - 1).fill(null));
+
+  gameState.currentPlayerIndex = 0;
+  gameState.selectedDot = null;
+  gameState.totalBoxes = (gameState.gridSize - 1) * (gameState.gridSize - 1);
+  gameState.completedBoxes = 0;
+
+  // Reset player scores
+  gameState.players.forEach(player => player.score = 0);
+
+  createGameGrid();
+  updateScoreboard();
+}
+
+function createGameGrid() {
+  gameGridContainer.innerHTML = ''; // Clear previous grid
+
+  // The grid will have (2N-1) rows and (2N-1) columns, where N is gridSize.
+  // Even indices (0, 2, 4...) are for dots.
+  // Odd indices (1, 3, 5...) are for lines/boxes.
+  let gridTemplateColumns = '';
+  let gridTemplateRows = '';
+
+  for (let i = 0; i < (2 * gameState.gridSize - 1); i++) {
+      if (i % 2 === 0) { // Dot row/column
+          gridTemplateColumns += `auto `; // 'auto' will respect dot's fixed size
+          gridTemplateRows += `auto `;
+      } else { // Line/Box row/column
+          gridTemplateColumns += `1fr `; // '1fr' will make lines/boxes responsive
+          gridTemplateRows += `1fr `;
+      }
+  }
+  gameGridContainer.style.gridTemplateColumns = gridTemplateColumns.trim();
+  gameGridContainer.style.gridTemplateRows = gridTemplateRows.trim();
+
+  for (let r = 0; r < (2 * gameState.gridSize - 1); r++) {
+      for (let c = 0; c < (2 * gameState.gridSize - 1); c++) {
+          if (r % 2 === 0 && c % 2 === 0) {
+              // This is a dot position (e.g., (0,0), (0,2), (2,0), (2,2))
+              const dot = document.createElement('div');
+              dot.classList.add('dot');
+              dot.dataset.row = r / 2; // Store original grid coordinates
+              dot.dataset.col = c / 2;
+              dot.addEventListener('click', handleDotClick);
+              gameGridContainer.appendChild(dot);
+          } else if (r % 2 === 0 && c % 2 !== 0) {
+              // This is a horizontal line position (e.g., (0,1), (0,3))
+              const hLine = document.createElement('div');
+              hLine.classList.add('line', 'horizontal');
+              hLine.dataset.row = r / 2;
+              hLine.dataset.col = (c - 1) / 2; // Line's column index in the line matrix
+              gameGridContainer.appendChild(hLine);
+          } else if (r % 2 !== 0 && c % 2 === 0) {
+              // This is a vertical line position (e.g., (1,0), (3,0))
+              const vLine = document.createElement('div');
+              vLine.classList.add('line', 'vertical');
+              vLine.dataset.row = (r - 1) / 2; // Line's row index in the line matrix
+              vLine.dataset.col = c / 2;
+              gameGridContainer.appendChild(vLine);
+          } else {
+              // This is a box position (e.g., (1,1), (1,3), (3,1), (3,3))
+              const box = document.createElement('div');
+              box.classList.add('box');
+              box.dataset.row = (r - 1) / 2; // Box's row index in the box matrix
+              box.dataset.col = (c - 1) / 2;
+              gameGridContainer.appendChild(box);
+          }
+      }
+  }
+}
+
+// --- Gameplay Logic ---
+function handleDotClick(event) {
+  const clickedDot = {
+      row: parseInt(event.target.dataset.row),
+      col: parseInt(event.target.dataset.col),
+      element: event.target
+  };
+
+  if (!gameState.selectedDot) {
+      // First dot selected
+      gameState.selectedDot = clickedDot;
+      clickedDot.element.classList.add('selected');
+  } else {
+      // Second dot selected
+      const prevDot = gameState.selectedDot;
+      const isAdjacent = (
+          (Math.abs(prevDot.row - clickedDot.row) === 1 && prevDot.col === clickedDot.col) || // Vertical adjacency
+          (Math.abs(prevDot.col - clickedDot.col) === 1 && prevDot.row === clickedDot.row)    // Horizontal adjacency
+      );
+
+      if (isAdjacent) {
+          let lineDrawn = false;
+          let lineElement = null;
+          let lineRow, lineCol;
+          let isHorizontal;
+
+          if (prevDot.row === clickedDot.row) { // Horizontal line
+              isHorizontal = true;
+              lineRow = prevDot.row;
+              lineCol = Math.min(prevDot.col, clickedDot.col); // Get the left-most column for the line
+              if (gameState.horizontalLines[lineRow][lineCol] === null) { // Check if line already exists
+                  gameState.horizontalLines[lineRow][lineCol] = gameState.currentPlayerIndex;
+                  lineDrawn = true;
+                  // Find the corresponding line element in the DOM
+                  lineElement = gameGridContainer.querySelector(`.line.horizontal[data-row="${lineRow}"][data-col="${lineCol}"]`);
+              }
+          } else { // Vertical line
+              isHorizontal = false;
+              lineRow = Math.min(prevDot.row, clickedDot.row); // Get the top-most row for the line
+              lineCol = prevDot.col;
+              if (gameState.verticalLines[lineRow][lineCol] === null) { // Check if line already exists
+                  gameState.verticalLines[lineRow][lineCol] = gameState.currentPlayerIndex;
+                  lineDrawn = true;
+                  // Find the corresponding line element in the DOM
+                  lineElement = gameGridContainer.querySelector(`.line.vertical[data-row="${lineRow}"][data-col="${lineCol}"]`);
+              }
+          }
+
+          if (lineDrawn) {
+              lineElement.classList.add('drawn');
+              lineElement.style.setProperty('--line-color', gameState.players[gameState.currentPlayerIndex].color);
+
+              const boxesCompleted = checkBoxes(lineRow, lineCol, isHorizontal);
+              if (!boxesCompleted) {
+                  switchPlayer();
+              }
+              updateScoreboard();
+              checkEndGame();
+          }
+      }
+
+      // Clear selection regardless of whether a line was drawn or valid
+      prevDot.element.classList.remove('selected');
+      gameState.selectedDot = null;
+  }
+}
+
+function checkBoxes(lineRow, lineCol, isHorizontal) {
+  let boxesCompletedThisTurn = 0;
+  const currentPlayer = gameState.currentPlayerIndex;
+  const N = gameState.gridSize - 1; // Number of boxes horizontally/vertically
+
+  if (isHorizontal) {
+      // Check box above (if line is not in the first row of horizontal lines)
+      if (lineRow > 0) {
+          const boxRow = lineRow - 1;
+          const boxCol = lineCol;
+          if (
+              gameState.horizontalLines[boxRow][boxCol] !== null && // Top line of potential box
+              gameState.horizontalLines[lineRow][boxCol] !== null && // Bottom line of potential box (the one just drawn)
+              gameState.verticalLines[boxRow][boxCol] !== null && // Left vertical line of potential box
+              gameState.verticalLines[boxRow][boxCol + 1] !== null // Right vertical line of potential box
+          ) {
+              if (gameState.boxes[boxRow][boxCol] === null) { // Only fill if not already owned
+                  gameState.boxes[boxRow][boxCol] = currentPlayer;
+                  fillBox(boxRow, boxCol, currentPlayer);
+                  gameState.players[currentPlayer].score++;
+                  gameState.completedBoxes++;
+                  boxesCompletedThisTurn++;
+              }
+          }
+      }
+     
+      if (lineRow < N) {
+          const boxRow = lineRow;
+          const boxCol = lineCol;
+          if (
+              gameState.horizontalLines[boxRow][boxCol] !== null && // Top line of potential box (the one just drawn)
+              gameState.horizontalLines[boxRow + 1][boxCol] !== null && // Bottom line of potential box
+              gameState.verticalLines[boxRow][boxCol] !== null && // Left vertical line of potential box
+              gameState.verticalLines[boxRow][boxCol + 1] !== null // Right vertical line of potential box
+          ) {
+              if (gameState.boxes[boxRow][boxCol] === null) { // Only fill if not already owned
+                  gameState.boxes[boxRow][boxCol] = currentPlayer;
+                  fillBox(boxRow, boxCol, currentPlayer);
+                  gameState.players[currentPlayer].score++;
+                  gameState.completedBoxes++;
+                  boxesCompletedThisTurn++;
+              }
+          }
+      }
+  } else { // Vertical line
+      // Check box to the left (if line is not in the first column of vertical lines)
+      if (lineCol > 0) {
+          const boxRow = lineRow;
+          const boxCol = lineCol - 1;
+          if (
+              gameState.verticalLines[boxRow][boxCol] !== null && // Left vertical line of potential box (the one just drawn)
+              gameState.verticalLines[boxRow][lineCol] !== null && // Right vertical line of potential box
+              gameState.horizontalLines[boxRow][boxCol] !== null && // Top horizontal line of potential box
+              gameState.horizontalLines[boxRow + 1][boxCol] !== null // Bottom horizontal line of potential box
+          ) {
+              if (gameState.boxes[boxRow][boxCol] === null) { // Only fill if not already owned
+                  gameState.boxes[boxRow][boxCol] = currentPlayer;
+                  fillBox(boxRow, boxCol, currentPlayer);
+                  gameState.players[currentPlayer].score++;
+                  gameState.completedBoxes++;
+                  boxesCompletedThisTurn++;
+              }
+          }
+      }
+     
+      if (lineCol < N) {
+          const boxRow = lineRow;
+          const boxCol = lineCol;
+          if (
+              gameState.verticalLines[boxRow][boxCol] !== null && // Left vertical line of potential box
+              gameState.verticalLines[boxRow][boxCol + 1] !== null && // Right vertical line of potential box (the one just drawn)
+              gameState.horizontalLines[boxRow][boxCol] !== null && // Top horizontal line of potential box
+              gameState.horizontalLines[boxRow + 1][boxCol] !== null // Bottom horizontal line of potential box
+          ) {
+              if (gameState.boxes[boxRow][boxCol] === null) { // Only fill if not already owned
+                  gameState.boxes[boxRow][boxCol] = currentPlayer;
+                  fillBox(boxRow, boxCol, currentPlayer);
+                  gameState.players[currentPlayer].score++;
+                  gameState.completedBoxes++;
+                  boxesCompletedThisTurn++;
+              }
+          }
+      }
+  }
+  return boxesCompletedThisTurn > 0; // Return true if any box was completed
+}
+
+function fillBox(boxRow, boxCol, playerIndex) {
+  // Find the corresponding box element in the DOM
+  const boxElement = gameGridContainer.querySelector(`.box[data-row="${boxRow}"][data-col="${boxCol}"]`);
+  if (boxElement) {
+      boxElement.classList.add('filled');
+      boxElement.style.setProperty('--box-color', gameState.players[playerIndex].color);
+  }
+}
+
+function switchPlayer() {
+  gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+}
+
+function updateScoreboard() {
+  scoreboardDiv.innerHTML = '';
+  gameState.players.forEach((player, index) => {
+      const playerScoreDiv = document.createElement('div');
+      playerScoreDiv.classList.add('player-score');
+      if (index === gameState.currentPlayerIndex) {
+          playerScoreDiv.classList.add('current-player');
+      }
+      playerScoreDiv.innerHTML = `
+          <div class="player-color-box" style="background-color: ${player.color};"></div>
+          <span>${player.name}: ${player.score}</span>
+      `;
+      scoreboardDiv.appendChild(playerScoreDiv);
+  });
+}
+
+function checkEndGame() {
+  if (gameState.completedBoxes === gameState.totalBoxes) {
+      showScreen(endScreen);
+      displayFinalScoreboard();
+  }
+}
+
+function displayFinalScoreboard() {
+  finalScoreboardDiv.innerHTML = '';
+  // Sort players by score in descending order
+  const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
+
+  sortedPlayers.forEach(player => {
+      const playerScoreDiv = document.createElement('div');
+      playerScoreDiv.classList.add('player-score');
+      playerScoreDiv.innerHTML = `
+          <div class="player-color-box" style="background-color: ${player.color};"></div>
+          <span>${player.name}: ${player.score} boxes</span>
+      `;
+      finalScoreboardDiv.appendChild(playerScoreDiv);
+  });
+
+  const winner = sortedPlayers[0];
+  if (sortedPlayers.length > 1 && sortedPlayers[0].score === sortedPlayers[1].score) {
+      // Handle ties: find all players with the top score
+      const tiedWinners = sortedPlayers.filter(p => p.score === winner.score);
+      winnerMessage.textContent = `🎉 ${tiedWinners.map(p => p.name).join(' and ')} Tie! 🎉`;
+  } else {
+      winnerMessage.textContent = `🎉 ${winner.name} Wins! 🎉`;
+  }
+}
+
+// --- End Screen Logic ---
+restartGameButton.addEventListener('click', () => {
+  // Reset game state and go back to start screen
+  gameState.players = [];
+  gameState.gridSize = 0;
+  gameState.horizontalLines = [];
+  gameState.verticalLines = [];
+  gameState.boxes = [];
+  gameState.currentPlayerIndex = 0;
+  gameState.selectedDot = null;
+  gameState.totalBoxes = 0;
+  gameState.completedBoxes = 0;
+
+  // Clear grid and scoreboard displays
+  gameGridContainer.innerHTML = '';
+  scoreboardDiv.innerHTML = '';
+  finalScoreboardDiv.innerHTML = '';
+  winnerMessage.textContent = '';
+
+  // Reset setup screen inputs to default
+  numPlayersSelect.value = '2';
+  gridSizeInput.value = '10';
+  renderPlayerInputs(); // Re-render default 2 player inputs
+
+  showScreen(startScreen);
+});
+
+// Initial screen display when the page loads
+showScreen(startScreen);
+
+  </script>
+</body>
+</html>
